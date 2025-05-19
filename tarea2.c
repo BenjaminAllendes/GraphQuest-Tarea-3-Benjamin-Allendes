@@ -19,13 +19,13 @@ typedef struct  {
   char name[100] ;
   char left[5], right[5], up[5], down[5] ;
   char descripcion[1000] ;
-  List *items ;
+  Map *items ;
   char esFinal ;
   List *states_adj;
 } State;
 
 typedef struct {
-  List *carry_items ;
+  Map *carry_items ;
   int time ;
   int peso ;
   
@@ -84,21 +84,20 @@ void cargar_laberinto(Map *grafo) {
     estado->states_adj = list_adjs ;
     
     Item *objeto = (Item *) malloc(sizeof(Item)) ;
-    List *lista_objetos = list_create() ;
+    Map *lista_objetos = map_create(is_equal_str) ;
     
     List *objetos_throw = split_string(campos[3], ";") ;
     char *string = list_first(objetos_throw) ;
     while (string != NULL){
       List *objetos_throw_dos = split_string(string, ",") ;
       char *string_dos = list_first(objetos_throw_dos) ; 
-
-      strcpy(objeto->name, string_dos) ;
+      map_insert(lista_objetos, string_dos, objeto) ;
       string_dos = list_next(objetos_throw_dos) ;
       objeto->peso = atoi(string_dos) ;
       string = list_next(objetos_throw) ;
       objeto->valor = atoi(string_dos) ;
 
-      list_pushBack(lista_objetos, objeto) ;
+      
 
       string = list_next(objetos_throw) ;
       free(objetos_throw_dos) ;
@@ -143,16 +142,23 @@ void cargar_laberinto(Map *grafo) {
 Character * estado_incial(){
   Character *pj = (Character *) malloc(sizeof(Character)) ;
   pj->time = 10 ;
-  pj->carry_items = list_create() ;
+  pj->carry_items = map_create(is_equal_str) ;
   pj->peso = 0 ;
   return pj ;
 }
 
 void mostrar_items(Character *pj) {
-  Item *aux = list_first(pj->carry_items) ;
-  if (aux == NULL) printf("No tienes ningun item en tu inventario ") ;
-  while (aux != NULL){
+  MapPair *par = map_first(pj->carry_items) ;
+  
+  if (par == NULL) {
+    printf("No tienes ningun item en tu inventario ") ;
+    return ;
+  }
+  Item * aux = par->value ; 
+  while (par != NULL){
     printf("[Item: %s, peso %d, valor %d] ", aux->name, aux->peso, aux->valor) ;
+    par = map_next(pj->carry_items) ;
+    if (par != NULL) aux = par->value ;
   }
   printf("\n") ;
   return ;
@@ -179,6 +185,41 @@ void menuOpciones(){
   puts("5) Salir del juego") ;
 }
 
+void recoger_objeto(State *act,Character *pj) {
+  char nombre_item[100] ;
+  scanf(" %[^\n]s", nombre_item) ;
+  MapPair *par = map_search(act->items, nombre_item) ;
+  if (par != NULL){
+    if (map_search(pj->carry_items, par->key) != NULL){
+      printf("Ya tienes ese objeto en tu inventario!") ;
+      presioneTeclaParaContinuar() ;
+      limpiarPantalla() ;
+    }
+    map_insert(pj->carry_items, par->key, par->value) ;
+    pj->time -= 1 ;
+  }
+  
+}
+
+void descartar_item(State *act,Character *pj) {
+  char nombre_item[100] ;
+  scanf(" %[^\n]s", nombre_item) ;
+  MapPair *par = map_search(pj->carry_items, nombre_item) ;
+  if (par != NULL){
+    MapPair *par_dos =  map_remove(pj->carry_items, nombre_item) ;
+    printf("Objeto '%s' eliminado", nombre_item) ;
+  }
+  else {
+    printf("No tienes este objeto...") ;
+  }
+  presioneTeclaParaContinuar() ;
+  limpiarPantalla() ;
+}
+
+void avanzar_direccion(State *act,Character *pj){
+  
+}
+
 void iniciar_partida(Map *grafo) {
   MapPair *par = map_search(grafo,"1") ;
   State *actual = par->value ;
@@ -189,7 +230,7 @@ void iniciar_partida(Map *grafo) {
   Character *personaje = estado_incial() ;
   puts("Empezando el juego...") ;
   
-  while (game_on){
+  while (game_on == 1){
     if (actual->esFinal) game_win(actual, personaje) ;
     puts("Estado actual:") ;
     printf("Escenario: %s \n", actual->name) ;
@@ -199,19 +240,21 @@ void iniciar_partida(Map *grafo) {
     printf("Direcciones posibles: ") ;
     posibles_direcciones(actual) ;
     
-    printf("\n Opciones: \n") ;
     do {
-
+      printf("\n Opciones: \n") ;
       
       menuOpciones() ;
       scanf(" %c", &opcion) ;
       switch(opcion){
         case '1' :
+          recoger_objeto(actual, personaje) ;
           break ;
         
         case '2' :
+          descartar_item(actual, personaje) ;
           break ;
         case '3' :
+          avanzar_direccion(actual, personaje) ;
           break ;
         case '4' :
           break ;
@@ -219,7 +262,7 @@ void iniciar_partida(Map *grafo) {
           game_on = 0 ;
           break ;
       }
-    }while (opcion != '5') ;
+    }while (opcion != '5' && opcion != '3') ;
     
   
   }
