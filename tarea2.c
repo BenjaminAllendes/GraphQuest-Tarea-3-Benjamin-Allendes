@@ -28,6 +28,7 @@ typedef struct {
   Map *carry_items ;
   float time ;
   int peso ;
+  int pts ;
   
 } Character ;
 
@@ -78,13 +79,23 @@ void cargar_laberinto(Map *grafo) {
       estado->esFinal = 's' ;
     }
     else estado->esFinal = 'n' ;
-    estado->states_adj = map_create(is_equal_str)  ;
-    Item *objeto = (Item *) malloc(sizeof(Item)) ;
-    Map *lista_objetos = map_create(is_equal_str) ;
-    List *objetos_throw = split_string(campos[3], ";") ;
+
     
-    char *string = list_first(objetos_throw) ;
-    if (strcmp(campos[3], "")) string = NULL ;
+    estado->states_adj = map_create(is_equal_str)  ;
+    char *string ;
+
+    Map *lista_objetos ;
+    List *objetos_throw ;
+    if (strcmp(campos[3], "") == 0) {
+      string = NULL ;
+      lista_objetos = NULL ;
+    }
+    else{
+      Item *objeto = (Item *) malloc(sizeof(Item)) ;
+      lista_objetos = map_create(is_equal_str) ;
+      objetos_throw = split_string(campos[3], ";") ;
+      string = list_first(objetos_throw) ;
+    } 
     while (string != NULL){
       Item *objeto = (Item *) malloc(sizeof(Item)) ;
       List *objetos_throw_dos = split_string(string, ",") ;
@@ -95,8 +106,6 @@ void cargar_laberinto(Map *grafo) {
       string = list_next(objetos_throw) ;
       objeto->valor = atoi(string_dos) ;
 
-      
-
       string = list_next(objetos_throw) ;
       free(objetos_throw_dos) ;
     }
@@ -105,6 +114,9 @@ void cargar_laberinto(Map *grafo) {
     estado->items = lista_objetos ;
     map_insert(grafo, estado->id, estado) ;
     list_pushBack(grafo_list, estado) ; 
+    if (estado->items == NULL)printf("hooooooOly shit   ") ;
+    printf("DEBUGGING %s %s %s %s %s %s \n", estado->id, estado->descripcion, estado->up, estado->down, 
+      estado->left, estado->right) ;
   }
 
   fclose(archivo); // Cierra el archivo después de leer todas las líneas
@@ -155,9 +167,10 @@ void mostrar_items_pj(Character *pj) {
     printf("No tienes ningun item en tu inventario \n") ;
     return ;
   }
-  Item * aux = par->value ; 
+  Item * aux = par->value ;
+  printf("Items en tu inventario: ") ;
   while (par != NULL){
-    printf("[Item: %s, peso %d, valor %d] ", aux->name, aux->peso, aux->valor) ;
+    printf("[Item: %s, peso %d, valor %d] ", par->key, aux->peso, aux->valor) ;
     par = map_next(pj->carry_items) ;
     if (par != NULL) aux = par->value ;
   }
@@ -165,13 +178,25 @@ void mostrar_items_pj(Character *pj) {
   return ;
 }
 
-void mostrar_items_escenario(State* act) {
-  MapPair *par = map_first(act->states_adj) ;
-  while (par != NULL){
-    Item *aux = par->value ;
-    printf("[Item: %s, peso %d, valor %d] ", aux->name, aux->peso, aux->valor) ;
-    par = map_next(act->states_adj) ;
+void mostrar_items_escenario(State* act, Character *pj) {
+  if (act ->items == NULL){
+    printf("No hay objetos en esta sala... \n") ;
+    return ;
   }
+
+  MapPair *par = map_first(act->items) ;
+  int carry_all = 1 ; // El personaje tiene todos los objetos de la sala
+  while (par != NULL){
+    if (map_search(pj->carry_items, par->key) != NULL) { 
+      par = map_next(act->items) ;
+      continue ;
+    }
+    carry_all = 0 ;
+    Item *aux = par->value ;
+    printf("[Item: %s, peso %d, valor %d] ", par->key, aux->peso, aux->valor) ;
+    par = map_next(act->items) ;
+  }
+  if (carry_all) printf("Ya tienes todos los items de esta sala.") ;
   printf("\n") ;
 }
 
@@ -198,38 +223,50 @@ void menuOpciones(){
 }
 
 void recoger_objeto(State *act,Character *pj) {
+  if (act->items == NULL) {
+    printf("No hay objetos en esta sala... \n") ;
+    return ; 
+  }
   printf("Ingresa el objeto que quieres recoger: ") ;
   char nombre_item[100] ;
   scanf(" %[^\n]s", nombre_item) ;
   MapPair *par = map_search(act->items, nombre_item) ;
+  Item *objeto = par->value ;
   if (par != NULL){
     if (map_search(pj->carry_items, par->key) != NULL){
       printf("Ya tienes ese objeto en tu inventario!") ;
     }
-    map_insert(pj->carry_items, par->key, par->value) ;
-    pj->time -= 1 ;
+    else {
+      map_insert(pj->carry_items, par->key, objeto) ;
+      pj->time -= 1 ;
+      pj->peso += objeto->peso ;
+      pj->pts += objeto->valor ;
+    }
   }
   else printf("Ese objeto no esta en el escenario") ;
-  
-  presioneTeclaParaContinuar() ;
-  limpiarPantalla() ;
 
 }
 
 void descartar_item(State *act,Character *pj) {
+  if (act->items == NULL) {
+    printf("No hay objetos en esta sala... \n") ;
+    return ; 
+  }
   printf("Ingresa el objeto que quieres descartar: ") ;
   char nombre_item[100] ;
   scanf(" %[^\n]s", nombre_item) ;
   MapPair *par = map_search(pj->carry_items, nombre_item) ;
+  
   if (par != NULL){
-    MapPair *par_dos =  map_remove(pj->carry_items, nombre_item) ;
+    MapPair *par_dos = map_remove(pj->carry_items, nombre_item) ;
     printf("Objeto '%s' eliminado", nombre_item) ;
+    Item *objeto = par->value ;
+    pj->peso -= objeto->peso ;
+    pj->pts -= objeto->valor ;
   }
   else {
     printf("No tienes este objeto...") ;
   }
-  presioneTeclaParaContinuar() ;
-  limpiarPantalla() ;
 }
 
 void menu_direcciones(){
@@ -244,7 +281,7 @@ State * avanzar_direccion(State *act,Character *pj){
   menu_direcciones() ;
   printf("Ingresa para donde quieres avanzar: ") ;
   scanf(" %c", &direccion) ;
-
+  int se_movio = 0 ;
   MapPair *par ;
   switch (direccion)
   {
@@ -252,6 +289,7 @@ State * avanzar_direccion(State *act,Character *pj){
     if (atoi(act->up) != -1) {
       par = map_search(act->states_adj, "Arri") ;
       act = par->value ;
+      se_movio = 1 ;
     }
     else {
       printf("No hay camino en esa direccion...") ;
@@ -261,7 +299,7 @@ State * avanzar_direccion(State *act,Character *pj){
     if (atoi(act->down) != -1) {
       par = map_search(act->states_adj, "Aba") ;
       act = par->value ;
-      printf("ESCENARIO SUPUESTO: %s", act->descripcion) ;
+      se_movio = 1 ;
     }
     else {
       printf("No hay camino en esa direccion...") ;
@@ -272,6 +310,7 @@ State * avanzar_direccion(State *act,Character *pj){
     if (atoi(act->left) != -1) {
       par = map_search(act->states_adj, "Izqui") ;
       act = par->value ;
+      se_movio = 1 ;
     }
     else {
       printf("No hay camino en esa direccion...") ;
@@ -279,14 +318,9 @@ State * avanzar_direccion(State *act,Character *pj){
     break ;
   case '4' :
     if (atoi(act->right) != -1) {
-      printf("Aqui entra") ;
       par = map_search(act->states_adj,"Dere") ;
-      printf("wat") ;
-      if (par == NULL) {
-        printf("no HAGAS NADA PERO XDDDD") ;
-      }
-      else act = par->value ;
-      printf("?????") ;
+      act = par->value ;
+      se_movio = 1 ;
     }
     else {
       printf("No hay camino en esa direccion...") ;
@@ -295,6 +329,10 @@ State * avanzar_direccion(State *act,Character *pj){
   default :
     printf("Opcion no valida") ;
     break ;
+  }
+  if (se_movio == 1) {
+    pj->time -= (1 + pj->peso) / 10.0 ;
+    printf("Se movio pero lol") ;
   }
   return act ;
 }
@@ -321,6 +359,7 @@ void iniciar_partida(Map *grafo) {
   int game_on = 1 ;
 
   Character *personaje = estado_incial() ;
+  limpiarPantalla(); 
   puts("Empezando el juego...") ;
   
   while (game_on == 1){
@@ -340,9 +379,9 @@ void iniciar_partida(Map *grafo) {
       puts("Estado actual:") ;
       printf("Escenario: %s \n", actual->name) ;
       printf("Descripcion del escenario: %s \n", actual->descripcion) ;
-      printf("Tiempo restante = %f \n", personaje->time) ;
+      printf("Tiempo restante = %.2f \n", personaje->time) ;
       mostrar_items_pj(personaje) ;
-      mostrar_items_escenario(actual) ;
+      mostrar_items_escenario(actual, personaje) ;
       printf("Direcciones posibles: ") ;
       posibles_direcciones(actual) ;
       printf("\n Opciones: \n") ;
@@ -367,6 +406,8 @@ void iniciar_partida(Map *grafo) {
           game_on = 0 ;
           break ;
       }
+      presioneTeclaParaContinuar() ;
+      limpiarPantalla() ;
     }while (opcion != '5' && opcion != '3' && opcion != '4') ;
     
   
@@ -400,6 +441,7 @@ int main() {
       break;
     }
     presioneTeclaParaContinuar();
+    limpiarPantalla() ;
 
   } while (opcion != '3');
 
