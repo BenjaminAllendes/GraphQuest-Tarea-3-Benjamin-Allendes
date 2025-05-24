@@ -36,7 +36,7 @@ typedef struct {
 void mostrarMenuPrincipal() {
   limpiarPantalla();
   puts("========================================");
-  puts("geimu");
+  puts("               GraphQuest               ");
   puts("========================================");
 
   puts("1) Cargar laberinto") ;
@@ -48,11 +48,9 @@ int is_equal_str(void *key1, void *key2) {
   return strcmp((char *)key1, (char *)key2) == 0;
 }
 
-/**
- * Carga películas desde un archivo CSV y las almacena en un mapa por ID.
- */
+
+// Carga el grafo desde un archivo CSV y las almacena en un mapa por ID.
 void cargar_laberinto(Map *grafo) {
-  // Intenta abrir el archivo CSV que contiene datos de películas
   FILE *archivo = fopen("data/graphquest.csv", "r");
   if (archivo == NULL) {
     perror(
@@ -64,10 +62,11 @@ void cargar_laberinto(Map *grafo) {
   // strings, donde cada elemento representa un campo de la línea CSV procesada.
   campos = leer_linea_csv(archivo, ','); // Lee los encabezados del CSV
 
-  List *grafo_list = list_create() ;
+  List *grafo_list = list_create() ; // Se crea una lista aparte para guardar los nodos
   // Lee cada línea del archivo CSV hasta el final
   while ((campos = leer_linea_csv(archivo, ',')) != NULL) {
-    State *estado = (State *)malloc(sizeof(State));
+    State *estado = (State *)malloc(sizeof(State)); // Se almacena memoria para cada escenario (nodo)
+    // Se guardan datos en el estado 
     strcpy(estado->id, campos[0]) ;
     strcpy(estado->name, campos[1]) ;
     strcpy(estado->descripcion, campos[2]) ;
@@ -80,58 +79,59 @@ void cargar_laberinto(Map *grafo) {
     }
     else estado->esFinal = 'n' ;
 
-    
+    // Se crea el mapa de nodos adyacentes
     estado->states_adj = map_create(is_equal_str)  ;
     char *string ;
 
-    Map *lista_objetos ;
-    List *objetos_throw ;
-    if (strcmp(campos[3], "") == 0) {
-      string = NULL ;
-      lista_objetos = NULL ;
-    }
-    else{
-      Item *objeto = (Item *) malloc(sizeof(Item)) ;
-      lista_objetos = map_create(is_equal_str) ;
-      objetos_throw = split_string(campos[3], ";") ;
-      string = list_first(objetos_throw) ;
-    } 
+    // Se crea el mapa de objetos la cual tendra todos los objetos del escenario.
+    Map *lista_objetos = map_create(is_equal_str) ;
+    // Se crea una lista de strings los cuales van a ser divididos por el caracter ';'.
+    List *objetos_throw = split_string(campos[3], ";") ;
+    string = list_first(objetos_throw) ; // Se revisa el primer string de esta lista creada
+     
+    // Loop para revisar todos los objetos
     while (string != NULL){
-      Item *objeto = (Item *) malloc(sizeof(Item)) ;
-      List *objetos_throw_dos = split_string(string, ",") ;
+      Item *objeto = (Item *) malloc(sizeof(Item)) ; // Se reserva memoria para el objeto
+      List *objetos_throw_dos = split_string(string, ",") ; // Lista dividida por el caracter ','
       char *string_dos = list_first(objetos_throw_dos) ; 
+      // Si el string de la posicion en 3 no hay ningun objeto y se termina el ciclo
+      if (strcmp(campos[3], "nan") == 0){
+        free(objeto) ;
+        free(objetos_throw_dos) ; 
+        lista_objetos = NULL ;
+        break ;
+      }
+      // De lo contrario, se va "recorriendo" la lista para guardar los 3 datos del objeto.
       map_insert(lista_objetos, string_dos, objeto) ;
       string_dos = list_next(objetos_throw_dos) ;
       objeto->peso = atoi(string_dos) ;
-      string = list_next(objetos_throw) ;
+      string = list_next(objetos_throw_dos) ;
       objeto->valor = atoi(string_dos) ;
-
+      
       string = list_next(objetos_throw) ;
       free(objetos_throw_dos) ;
     }
     free(objetos_throw) ;
 
     estado->items = lista_objetos ;
-    map_insert(grafo, estado->id, estado) ;
+    map_insert(grafo, estado->id, estado) ; // Se inserta el escenario en el grafo.
     list_pushBack(grafo_list, estado) ; 
-    if (estado->items == NULL)printf("hooooooOly shit   ") ;
-    printf("DEBUGGING %s %s %s %s %s %s \n", estado->id, estado->descripcion, estado->up, estado->down, 
-      estado->left, estado->right) ;
   }
-
   fclose(archivo); // Cierra el archivo después de leer todas las líneas
-  State *par_grafo = list_first(grafo_list) ;
-  State *est_aux = par_grafo ;
+  State *est_aux = list_first(grafo_list) ; // Primer escenario de la lista aparte 
 
   MapPair *par ;
-  while(par_grafo != NULL){
-    est_aux = par_grafo ;
+
+  // Loop para recorrer lista de escenarios y llenar el mapa de escenarios adyacentes de cada uno
+  while(est_aux != NULL){
     
     if (atoi(est_aux->left) != -1) {
+      printf("Izquierda") ;
       par = map_search(grafo, est_aux->left) ;
       map_insert(est_aux->states_adj, "Izqui", par->value) ;
     }
     if (atoi(est_aux->right) != -1) {
+      printf("Derecha") ;
       par = map_search(grafo, est_aux->right) ;
       State *holi = par->value ;
       map_insert(est_aux->states_adj,"Dere",holi) ;
@@ -139,27 +139,36 @@ void cargar_laberinto(Map *grafo) {
       
     }
     if (atoi(est_aux->up) != -1) {
+      printf("Arriba") ;
       par = map_search(grafo, est_aux->up) ;
       map_insert(est_aux->states_adj, "Arri", par->value) ;
     }
     if (atoi(est_aux->down) != -1) {
+      printf("Abajo") ;
       par = map_search(grafo, est_aux->down) ;
       map_insert(est_aux->states_adj, "Aba", par->value) ;
     }
-    par_grafo = list_next(grafo_list) ;
+    est_aux = list_next(grafo_list) ;
     
   } 
-  printf("Laberinto cargado correctamente!") ;
+  printf("Laberinto cargado correctamente! \n") ;
 }
 
+// Funcion donde se reserva memoria para el personaje y se le asignan los valores iniciales
+// Tiempo parte en 10, se crea un mapa vacio de objetos (inventario) y peso y puntaje parten en 0
 Character * estado_incial(){
   Character *pj = (Character *) malloc(sizeof(Character)) ;
   pj->time = 10 ;
   pj->carry_items = map_create(is_equal_str) ;
   pj->peso = 0 ;
+  pj->pts = 0;
   return pj ;
 }
 
+/*
+Funcion para mostrar los objetos que el personaje lleva actualmenete. Si no tiene nada simplemente
+se muestra esto, si no se muestran todos los objetos que tiene con su informacion correspondiente
+*/
 void mostrar_items_pj(Character *pj) {
   MapPair *par = map_first(pj->carry_items) ;
   
@@ -178,6 +187,8 @@ void mostrar_items_pj(Character *pj) {
   return ;
 }
 
+
+
 void mostrar_items_escenario(State* act, Character *pj) {
   if (act ->items == NULL){
     printf("No hay objetos en esta sala... \n") ;
@@ -185,13 +196,13 @@ void mostrar_items_escenario(State* act, Character *pj) {
   }
 
   MapPair *par = map_first(act->items) ;
-  int carry_all = 1 ; // El personaje tiene todos los objetos de la sala
+  int carry_all = 1 ; 
   while (par != NULL){
     if (map_search(pj->carry_items, par->key) != NULL) { 
       par = map_next(act->items) ;
       continue ;
     }
-    carry_all = 0 ;
+    carry_all = 0 ; // El personaje no tiene todos los objetos del escenario
     Item *aux = par->value ;
     printf("[Item: %s, peso %d, valor %d] ", par->key, aux->peso, aux->valor) ;
     par = map_next(act->items) ;
@@ -210,7 +221,11 @@ void posibles_direcciones(State *act){
 }
 
 void game_win(State *act, Character *pj){
-  printf("GANASTE!!!!!!!!!!!1") ;
+  printf("Llegaste al final del laberinto. Ganaste! \n") ;
+  printf("Inventario final: ") ;
+  mostrar_items_pj(pj) ;
+  printf("Puntaje final: %d puntos \n", pj->pts) ;
+  
   return ;
 }
 
@@ -221,18 +236,25 @@ void menuOpciones(){
   puts("4) Reiniciar partida") ;
   puts("5) Salir del juego") ;
 }
-
+/*
+Fucnion para recoger un objeto insertado en el teclado solo si existe el objeto en el escenario actual, 
+si la sala tienes objetos todavia sin agarrar, y si esta no estaba vacia desde un principio.
+*/
 void recoger_objeto(State *act,Character *pj) {
+  limpiarPantalla() ;
   if (act->items == NULL) {
     printf("No hay objetos en esta sala... \n") ;
     return ; 
   }
+  printf("Items: ") ;
+  mostrar_items_escenario(act, pj) ;
   printf("Ingresa el objeto que quieres recoger: ") ;
   char nombre_item[100] ;
   scanf(" %[^\n]s", nombre_item) ;
   MapPair *par = map_search(act->items, nombre_item) ;
-  Item *objeto = par->value ;
+  
   if (par != NULL){
+    Item *objeto = par->value ;
     if (map_search(pj->carry_items, par->key) != NULL){
       printf("Ya tienes ese objeto en tu inventario!") ;
     }
@@ -243,15 +265,21 @@ void recoger_objeto(State *act,Character *pj) {
       pj->pts += objeto->valor ;
     }
   }
-  else printf("Ese objeto no esta en el escenario") ;
+  else printf("Ese objeto no esta en el escenario \n") ;
 
 }
 
+/*
+Funcion para descartar el objeto que esta el invetario del personaje. 
+*/
 void descartar_item(State *act,Character *pj) {
+  limpiarPantalla() ;
   if (act->items == NULL) {
     printf("No hay objetos en esta sala... \n") ;
     return ; 
   }
+  printf("Inventario: ") ;
+  mostrar_items_pj(pj) ;
   printf("Ingresa el objeto que quieres descartar: ") ;
   char nombre_item[100] ;
   scanf(" %[^\n]s", nombre_item) ;
@@ -265,7 +293,7 @@ void descartar_item(State *act,Character *pj) {
     pj->pts -= objeto->valor ;
   }
   else {
-    printf("No tienes este objeto...") ;
+    printf("No tienes este objeto... \n") ;
   }
 }
 
@@ -275,14 +303,17 @@ void menu_direcciones(){
   puts("3) Izquierda") ;
   puts("4) Derecha") ;
 }
-
+// Funcion para cambiar el escenario actual a uno adyacente. (Es decir, moverse en el laberinto).
 State * avanzar_direccion(State *act,Character *pj){
+  limpiarPantalla() ;
   char direccion ;
   menu_direcciones() ;
   printf("Ingresa para donde quieres avanzar: ") ;
   scanf(" %c", &direccion) ;
   int se_movio = 0 ;
   MapPair *par ;
+
+  // Si la direccion es valida el nodo act se actualiza y se retorna. De lo contrario queda igual
   switch (direccion)
   {
   case '1':
@@ -332,31 +363,29 @@ State * avanzar_direccion(State *act,Character *pj){
   }
   if (se_movio == 1) {
     pj->time -= (1 + pj->peso) / 10.0 ;
-    printf("Se movio pero lol") ;
   }
   return act ;
 }
 
-void reiniciar_partida(Map *grafo, State *act,Character *pj){
+// Funcion para volver al estado incicial. Personaje y escenario pasan a su estado incial. 
+// Se retorna escenario inicial
+State * reiniciar_partida(Map *grafo, State *act,Character *pj){
   free(pj->carry_items) ;
   MapPair *par = map_search(grafo,"1") ;
   act = par->value ;
   free(pj) ;
-  pj = estado_incial() ;
+  return act ;
 }
 
-void game_lose(State *act,Character *pj){
-  printf("Te quedaste sin tiempo!") ;
-  
-  return ;
-}
-
+/* Funcion donde se inicia la partida y se realiza el menu principal del juego hasta
+que se llegue a una condiciones de fin del juego.
+*/
 void iniciar_partida(Map *grafo) {
   MapPair *par = map_search(grafo, "1") ;
   State *actual = par->value ;
 
   char opcion ;
-  int game_on = 1 ;
+  int game_on = 1 ; // Funcion para terminar el juego.
 
   Character *personaje = estado_incial() ;
   limpiarPantalla(); 
@@ -364,10 +393,9 @@ void iniciar_partida(Map *grafo) {
   
   while (game_on == 1){
     if (personaje->time <= 0) {
-      game_lose(actual, personaje) ;
+      printf("Te quedaste sin tiempo! \n") ;
       game_on = 0 ;
-      
-      continue ;
+      break ;
     }
     if (actual->esFinal == 's') {
       game_win(actual, personaje) ;
@@ -400,7 +428,8 @@ void iniciar_partida(Map *grafo) {
           actual = avanzar_direccion(actual, personaje) ;
           break ;
         case '4' :
-          reiniciar_partida(grafo, actual, personaje) ;
+          actual = reiniciar_partida(grafo, actual, personaje) ;
+          personaje = estado_incial() ;
           break ;
         case '5' :
           game_on = 0 ;
@@ -416,17 +445,15 @@ void iniciar_partida(Map *grafo) {
   return ;
 }
 int main() {
-  char opcion; // Variable para almacenar una opción ingresada por el usuario
-               // (sin uso en este fragmento)
+  char opcion; 
 
-  // Crea un mapa para almacenar películas, utilizando una función de
-  // comparación que trabaja con claves de tipo string.
+  // Crea un mapa el cual tendra todos los escenarios (grafo).
   Map *grafo = map_create(is_equal_str) ;
   
 
   do {
     mostrarMenuPrincipal();
-    printf("Ingrese su opción: ");
+    printf("Ingrese su opcion: ");
     scanf(" %c", &opcion);
 
     switch (opcion) {
