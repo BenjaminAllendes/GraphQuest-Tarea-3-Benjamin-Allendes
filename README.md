@@ -1,6 +1,6 @@
 # GraphQuest
 
-¡Bienvenido a GraphQuest! Este es un juego donde tendras que recorrer un laberinto hasta llegar a la salida. Tendras que ir recorriendo distintos escenarios hasta poder encontrar la ruta correcta, sumado a tener que llegar en un tiempo limitado. Ademas, existe un sistema de objetos y puntaje. Algunos escenarios contienen objetos que tienen un valor el cual aumentaran tu puntaje final, pero tambien tienen un peso que haran que moverte por el escenario sea mas dificil y por lo tanto gaste mas tiempo. ¿Te atreves a aventurarte?
+¡Bienvenido a GraphQuest! Este es un juego donde tendras que recorrer un laberinto hasta llegar a la salida. Tendras que ir atravesando distintos escenarios hasta poder encontrar la ruta correcta, sumado a tener que llegar en un tiempo limitado. Ademas existe un sistema de objetos y puntaje. Algunos escenarios contienen objetos que tienen un valor el cual aumentaran tu puntaje final, pero tambien tienen un peso que haran que moverte por el escenario sea mas dificil y por lo tanto gaste mas tiempo. ¿Te atreves a aventurarte?
 
 Los escenarios se cargan de un archivo CSV el cual viene incluido.
 
@@ -36,17 +36,18 @@ Este sistema ha sido desarrollado en lenguaje C y puede ejecutarse fácilmente u
 ## Funcionalidades
 
 ### Funcionando correctamente:
-- Cargar escenarios de un archivo CSV y guardar su informacion correspondiente-
+- Cargar escenarios de un archivo CSV y guardar su informacion correspondiente.
 - Poder moverse por los diferentes escenarios conectados.
 - Sistema de objetos e inventario. Se puede recoger y descartar objetos que estan en los escenarios.
 - Sistema de tiempo limitado por cada partida (tiempo in-game, no real).
 
 ### Problemas conocidos:
--  
+- Terminal tiene problemas con el caracter ñ
 
 ### A mejorar:
-- Añadir arte para cada escenario y objetos
-- Implementar una interfaz mas amigable
+- Añadir compatibilidad con letras del teclado español
+- Implementar una interfaz mas amigable.
+- Añadir arte para cada escenario y objetos. 
 
 ## Ejemplo de uso
 ### Paso 1: Cargar el laberinto
@@ -78,7 +79,7 @@ Ingresa tu opcion :
 ```
 
 ### Paso 3: Avanzar en una direccion
-Ahora puedes empezar a moverte por el laberinto solo por las direcciones posibles. Para esto hay que ingresar la opcion 3 y la direccion a la cual quieres ir
+Ahora puedes empezar a moverte por el laberinto solo por las direcciones posibles. Para esto hay que ingresar la opcion 3 y la direccion a la cual quieres ir.
 ```
 Direcciones:
 1) Arriba
