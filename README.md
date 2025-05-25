@@ -36,60 +36,94 @@ Este sistema ha sido desarrollado en lenguaje C y puede ejecutarse fácilmente u
 ## Funcionalidades
 
 ### Funcionando correctamente:
-- Cargar canciones de un archivo csv, guardar la informacion relevante de cada cancion y mostrar cada cancion guardada.
-- Buscar canciones por genero y mostrar la informacion guardada de cada una.
-- Buscar canciones por artista y mostrar la informacion guardada de cada una.
-- Buscar canciones por tempo (lentas, moderadas y rapidas) y mostrar la informacion guardada de cada una.
+- Cargar escenarios de un archivo CSV y guardar su informacion correspondiente-
+- Poder moverse por los diferentes escenarios conectados.
+- Sistema de objetos e inventario. Se puede recoger y descartar objetos que estan en los escenarios.
+- Sistema de tiempo limitado por cada partida (tiempo in-game, no real).
 
 ### Problemas conocidos:
-- Programa tiene problemas con algunos caracteres especiales como las tildes, causando algunos problemas visuales cuando una cancion contiene estos. 
+-  
 
 ### A mejorar:
-- Compatibilidad con mas tipos de caracteres para evitar problemas con canciones que contengan estos.
+- Añadir arte para cada escenario y objetos
 - Implementar una interfaz mas amigable
 
 ## Ejemplo de uso
-### Paso 1: Cargar canciones
-En `spotfind.c` se ingresa la ruta de la ruta del arhcivo CSV dentro de la carpeta del programa  de donde se quiera cargar las canciones (por ejemplo `data/song_dataset_.csv`), se guardan la informacion de las canciones y se muestra cada cancion guardada.
+### Paso 1: Cargar el laberinto
+En `GraphQuest.c` se ingresa la ruta de la ruta del arhcivo CSV dentro de la carpeta del programa  de donde se quiera cargar el laberinto (por ejemplo `graphquest.csv`), se guardan la informacion de los escenarios.
 
 ```
-60  FILE *archivo = fopen("RUTA DEL ARCHIVO", "r");
+54  FILE *archivo = fopen("RUTA DEL ARCHIVO", "r");
 ```
 
-### Paso 2: Buscar por genero
-Tras cargar las canciones, el usuario decide buscar todas las canciones de un genero que fueron cargadas.
+### Paso 2: Empezar la partida
+Luego de cargar el laberinto, se puede iniciar la partida. Se selecciona la opcion 2 y se empieza en la entrada principal.
 ```
-Ingrese el genero de la cancion: acoustic
-ID: 0, Titulo: Comedy, Artista: Gen Hoshino, Album: Comedy, Tempo: 87.917000
-ID: 1, Titulo: Ghost - Acoustic, Artista: Ben Woodward, Album: Ghost (Acoustic), Tempo: 77.488998
-ID: 2, Titulo: To Begin Again, Artista: Ingrid Michaelson;ZAYN, Album: To Begin Again, Tempo: 76.332001
-ID: 3, Titulo: Can't Help Falling In Love, Artista: Kina Grannis, Album: Crazy Rich Asians (Original Motion Picture Soundtrack), Tempo: 181.740005
-[La lista sigue hasta mostrar todas las canciones guardadas del mismo genero]
+Empezando el juego...
+Estado actual:
+Escenario: Entrada principal
+Descripcion del escenario: Una puerta rechinante abre paso a esta mansion olvidada por los dioses y los conserjes. El aire huele a humedad y a misterios sin resolver.
+Tiempo restante = 10.00
+No tienes ningun item en tu inventario
+No hay objetos en esta sala...
+Direcciones posibles: Abajo
+
+ Opciones:
+1) Recoger item
+2) Descartar item
+3) Avanzar en una direccion
+4) Reiniciar partida
+5) Salir del juego
+Ingresa tu opcion :
 ```
 
-### Paso 3: Buscar por artista
-El usuario busca todas las canciones de un mismo artista que fueron cargadas.
+### Paso 3: Avanzar en una direccion
+Ahora puedes empezar a moverte por el laberinto solo por las direcciones posibles. Para esto hay que ingresar la opcion 3 y la direccion a la cual quieres ir
 ```
-Ingrese el artista de la cancion: Weezer
-ID : 2027, Titulo: Records, Album: Tek It - New Noise, Genero: alt-rock, Tempo: 100.005997 
-ID : 2063, Titulo: Records, Album: Rock - Best of 2022, Genero: alt-rock, Tempo: 100.005997 
-ID : 2064, Titulo: Say It Ain't So, Album: Los Cl├ísicos del Pop 90s, Genero: alt-rock, Tempo: 151.779007 
-ID : 2065, Titulo: Say It Ain't So, Album: 90's Music Grandi Successi, Genero: alt-rock, Tempo: 151.779007
-[La lista sigue hasta mostrar todas las canciones guardadas del mismo artista]
+Direcciones:
+1) Arriba
+2) Abajo
+3) Izquierda
+4) Derecha
+Ingresa para donde quieres avanzar: 2
+```
+```
+Estado actual:
+Escenario: Cocina
+Descripcion del escenario: Restos de una batalla culinaria. Cuchillos por aqui, migajas por alla. Alguien cocinoÔÇª o fue cocinado.  
+Tiempo restante = 9.90
+No tienes ningun item en tu inventario
+Items en este escenario: [Item: Cuchillo, peso 3, valor 3] [Item: Pan, peso 2, valor 2]
+Direcciones posibles: Arriba Abajo Derecha
 ```
 
-### Paso 4: Buscar por tempo
-El usuario busca todas las canciones por un mismo rango de beats-per-seocn (BPM). Existen tres rangos, canciones lentas (<80 BPM), moderadas (80-120 BPM) y rapidas (120< BPM).
+### Paso 4: Recoger objeto
+Puedes recoger objetos si un escenario contiene uno o varios de estos. Para esto hay que ingresar la opcion 1 y el item que quieras recoger. Una vez recogido, el item pasa a estar en el inventario.
 ```
-1) Lentas <80 BPM
-2) Moderadas 80-120 BPM
-3) Rapidas 120< BPM
-Ingrese su opcion: 1
-ID: 1,Titulo: Ghost - Acoustic, Artista: Ben Woodward, Album: Ghost (Acoustic), Genero: acoustic Tempo: 77.488998 
-ID: 2,Titulo: To Begin Again, Artista: Ingrid Michaelson;ZAYN, Album: To Begin Again, Genero: acoustic Tempo: 76.332001 
-ID: 9,Titulo: Hunger, Artista: Ross Copperman, Album: Hunger, Genero: acoustic Tempo: 78.899002
-ID: 53,Titulo: A Drop in the Ocean, Artista: Ron Pope, Album: The Bedroom Demos, Genero: acoustic Tempo: 73.139000
-ID: 102,Titulo: Pieces (Hushed), Artista: Andrew Belle, Album: Black Bear (Hushed), Genero: acoustic Tempo: 69.641998
-ID: 103,Titulo: Mirrors, Artista: Boyce Avenue;Fifth Harmony, Album: Cover Sessions, Vol. 3, Genero: acoustic Tempo: 76.971001
-[Lista sigue hasta mostrar todas las canciones lentas]
+Items: Items en este escenario: [Item: Cuchillo, peso 3, valor 3] [Item: Pan, peso 2, valor 2]
+Ingresa el objeto que quieres recoger: Cuchillo
+Objeto 'Cuchillo' obtenido! 
+Presione una tecla para continuar...
 ```
+### Paso 5: Descartar objeto
+Puedes descartar objetos del escenario si lo consideras necesario. Para esto hay que ingresar la opcion 2 y el item que quieras descartar. El item vuelve a su escenario original.
+```
+Inventario: Inventario: [Item: Cuchillo, peso 3, valor 3] [Item: Moneda, peso 2, valor 2]
+Ingresa el objeto que quieres descartar: Cuchillo
+Objeto 'Cuchillo' eliminado 
+Presione una tecla para continuar...
+```
+### Paso 6: Ganar el juego
+Para ganar GraphQuest solo tienes que encontrar la salida. Se mostrara tu puntaje e inventario finales.
+(Pantalla de victoria)
+```
+Llegaste al final del laberinto. Ganaste!
+Inventario final: Inventario: [Item: Moneda, peso 2, valor 2]
+Puntaje final: 2 puntos
+Fin del juego
+Presione una tecla para continuar...
+```
+### Paso 7: Reiniciar el juego
+En medio de una partida si quieres puedes empezar de cero con la opcion 4.
+### Paso 8: Salir del juego
+Se puede salir del juego con al opcion 5.

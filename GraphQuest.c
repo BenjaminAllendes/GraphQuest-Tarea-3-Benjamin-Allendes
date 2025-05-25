@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <math.h>
 
 typedef struct 
 {
@@ -26,7 +26,7 @@ typedef struct  {
 
 typedef struct {
   Map *carry_items ;
-  float time ;
+  int time ;
   int peso ;
   int pts ;
   
@@ -126,12 +126,10 @@ void cargar_laberinto(Map *grafo) {
   while(est_aux != NULL){
     
     if (atoi(est_aux->left) != -1) {
-      printf("Izquierda") ;
       par = map_search(grafo, est_aux->left) ;
       map_insert(est_aux->states_adj, "Izqui", par->value) ;
     }
     if (atoi(est_aux->right) != -1) {
-      printf("Derecha") ;
       par = map_search(grafo, est_aux->right) ;
       State *holi = par->value ;
       map_insert(est_aux->states_adj,"Dere",holi) ;
@@ -139,12 +137,10 @@ void cargar_laberinto(Map *grafo) {
       
     }
     if (atoi(est_aux->up) != -1) {
-      printf("Arriba") ;
       par = map_search(grafo, est_aux->up) ;
       map_insert(est_aux->states_adj, "Arri", par->value) ;
     }
     if (atoi(est_aux->down) != -1) {
-      printf("Abajo") ;
       par = map_search(grafo, est_aux->down) ;
       map_insert(est_aux->states_adj, "Aba", par->value) ;
     }
@@ -177,7 +173,7 @@ void mostrar_items_pj(Character *pj) {
     return ;
   }
   Item * aux = par->value ;
-  printf("Items en tu inventario: ") ;
+  printf("Inventario: ") ;
   while (par != NULL){
     printf("[Item: %s, peso %d, valor %d] ", par->key, aux->peso, aux->valor) ;
     par = map_next(pj->carry_items) ;
@@ -197,12 +193,13 @@ void mostrar_items_escenario(State* act, Character *pj) {
 
   MapPair *par = map_first(act->items) ;
   int carry_all = 1 ; 
+  printf("Items en este escenario: ") ;
   while (par != NULL){
     if (map_search(pj->carry_items, par->key) != NULL) { 
       par = map_next(act->items) ;
       continue ;
     }
-    carry_all = 0 ; // El personaje no tiene todos los objetos del escenario
+    carry_all = 0 ; // El jugador no tiene todos los objetos del escenario
     Item *aux = par->value ;
     printf("[Item: %s, peso %d, valor %d] ", par->key, aux->peso, aux->valor) ;
     par = map_next(act->items) ;
@@ -231,7 +228,7 @@ void game_win(State *act, Character *pj){
 
 void menuOpciones(){
   puts("1) Recoger item") ;
-  puts("2) Descartar item(s)") ;
+  puts("2) Descartar item") ;
   puts("3) Avanzar en una direccion") ;
   puts("4) Reiniciar partida") ;
   puts("5) Salir del juego") ;
@@ -256,10 +253,11 @@ void recoger_objeto(State *act,Character *pj) {
   if (par != NULL){
     Item *objeto = par->value ;
     if (map_search(pj->carry_items, par->key) != NULL){
-      printf("Ya tienes ese objeto en tu inventario!") ;
+      printf("Ya tienes ese objeto en tu inventario! \n") ;
     }
     else {
       map_insert(pj->carry_items, par->key, objeto) ;
+      printf("Objeto '%s' obtenido! \n", par->key) ;
       pj->time -= 1 ;
       pj->peso += objeto->peso ;
       pj->pts += objeto->valor ;
@@ -287,7 +285,7 @@ void descartar_item(State *act,Character *pj) {
   
   if (par != NULL){
     MapPair *par_dos = map_remove(pj->carry_items, nombre_item) ;
-    printf("Objeto '%s' eliminado", nombre_item) ;
+    printf("Objeto '%s' eliminado \n", nombre_item) ;
     Item *objeto = par->value ;
     pj->peso -= objeto->peso ;
     pj->pts -= objeto->valor ;
@@ -298,6 +296,7 @@ void descartar_item(State *act,Character *pj) {
 }
 
 void menu_direcciones(){
+  puts("Direcciones:") ;
   puts("1) Arriba") ;
   puts("2) Abajo") ;
   puts("3) Izquierda") ;
@@ -362,7 +361,8 @@ State * avanzar_direccion(State *act,Character *pj){
     break ;
   }
   if (se_movio == 1) {
-    pj->time -= (1 + pj->peso) / 10.0 ;
+    double resta = ceil((1 + pj->peso) / 10.0) ;
+    pj->time -= (int) resta  ;
   }
   return act ;
 }
@@ -407,7 +407,7 @@ void iniciar_partida(Map *grafo) {
       puts("Estado actual:") ;
       printf("Escenario: %s \n", actual->name) ;
       printf("Descripcion del escenario: %s \n", actual->descripcion) ;
-      printf("Tiempo restante = %.2f \n", personaje->time) ;
+      printf("Tiempo restante = %d \n", personaje->time) ;
       mostrar_items_pj(personaje) ;
       mostrar_items_escenario(actual, personaje) ;
       printf("Direcciones posibles: ") ;
@@ -415,7 +415,9 @@ void iniciar_partida(Map *grafo) {
       printf("\n Opciones: \n") ;
       
       menuOpciones() ;
+      printf("Ingresa tu opcion : ") ;
       scanf(" %c", &opcion) ;
+      
       switch(opcion){
         case '1' :
           recoger_objeto(actual, personaje) ;
@@ -450,7 +452,7 @@ int main() {
   // Crea un mapa el cual tendra todos los escenarios (grafo).
   Map *grafo = map_create(is_equal_str) ;
   
-
+  int cargado = 0 ;
   do {
     mostrarMenuPrincipal();
     printf("Ingrese su opcion: ");
@@ -459,9 +461,11 @@ int main() {
     switch (opcion) {
     case '1':
       cargar_laberinto(grafo);
+      cargado = 1 ;
       break;
     case '2':
-      iniciar_partida(grafo);
+      if (cargado == 0) printf("El laberinto todavia no ha sido cargado. \n") ;
+      else iniciar_partida(grafo);
       break;
     case '3':
       printf("Saliendo...") ;
