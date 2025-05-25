@@ -42,10 +42,10 @@ Este sistema ha sido desarrollado en lenguaje C y puede ejecutarse fácilmente u
 - Sistema de tiempo limitado por cada partida (tiempo in-game, no real).
 
 ### Problemas conocidos:
-- Terminal tiene problemas con el caracter ñ.
+- Terminal tiene problemas para mostrar correctamente el caracter ñ.
 
 ### A mejorar:
-- Añadir compatibilidad con letras del teclado español
+- Añadir compatibilidad con caracteres del teclado español
 - Implementar una interfaz mas amigable.
 - Añadir arte para cada escenario y objetos. 
 
