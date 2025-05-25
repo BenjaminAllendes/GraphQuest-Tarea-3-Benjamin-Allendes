@@ -360,6 +360,8 @@ State * avanzar_direccion(State *act,Character *pj){
     printf("Opcion no valida") ;
     break ;
   }
+
+  // Si el escenario cambia se resta el tiempo
   if (se_movio == 1) {
     double resta = ceil((1 + pj->peso) / 10.0) ;
     pj->time -= (int) resta  ;
@@ -452,6 +454,7 @@ int main() {
   // Crea un mapa el cual tendra todos los escenarios (grafo).
   Map *grafo = map_create(is_equal_str) ;
   
+
   int cargado = 0 ;
   do {
     mostrarMenuPrincipal();
